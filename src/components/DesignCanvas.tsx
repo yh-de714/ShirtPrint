@@ -1,11 +1,10 @@
 "use client";
 import dynamic from "next/dynamic";
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useEffect, useRef, useImperativeHandle, forwardRef } from 'react';
 import { Stage, Layer, Transformer, Rect, Text, Group } from 'react-konva';
-// import Konva from 'konva';
+import Konva from 'konva';
 
-// const ImageLayer = dynamic(()=> import('./ImageLayer'), {ssr:false}); 
+const ImageLayer = dynamic(()=> import('./ImageLayer'), {ssr:false}); 
 
 interface DesignCanvasProps {
     images: Array<{
@@ -44,7 +43,6 @@ interface DesignCanvasProps {
     onDeselect?: () => void;
 }
 
-// Add ref type
 export interface DesignCanvasRef {
     setPosition: (x: number, y: number) => void;
     getImageDimensions: () => { width: number; height: number; scaleX: number; scaleY: number } | null;
@@ -54,12 +52,10 @@ export interface DesignCanvasRef {
     getStage: () => Konva.Stage | null;
 }
 
-// Add this interface to extend Konva.Text with our custom property
 interface TextWithTapTime extends Konva.Text {
     lastTapTime?: number;
 }
 
-// Update to use forwardRef
 const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
     images,
     printableArea,
@@ -80,30 +76,24 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
     const textRefs = useRef<{ [key: string]: TextWithTapTime | null }>({});
     const transformerRef = useRef<Konva.Transformer>(null);
 
-    // Add this to load the t-shirt image
-    // Update transformer when selection changes
     useEffect(() => {
         if (!transformerRef.current) return;
 
         if (selectedTextId) {
-            // If text is selected, attach transformer to text
             const textNode = textRefs.current[selectedTextId];
             if (textNode) {
                 transformerRef.current.nodes([textNode]);
                 transformerRef.current.getLayer()?.batchDraw();
             }
         } else {
-            // Clear transformer if nothing is selected
             transformerRef.current.nodes([]);
             transformerRef.current.getLayer()?.batchDraw();
         }
     }, [selectedTextId]);
 
-    // Expose methods via ref
     useImperativeHandle(ref, () => ({
         setPosition: (x: number, y: number) => {
             if (selectedImageId) {
-                // Update the position of the selected image
                 onImageUpdate(selectedImageId, { x, y });
             }
         },
@@ -139,15 +129,13 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
         getContainerWidth: () => containerWidth,
         getStageCanvas: () => {
             if (stageRef.current) {
-                // Create a new canvas with the dimensions of the printable area
                 const canvas = document.createElement('canvas');
-                const pixelRatio = 2; // Higher resolution for better quality
+                const pixelRatio = 2;
                 canvas.width = printableArea.width * pixelRatio;
                 canvas.height = printableArea.height * pixelRatio;
                 const context = canvas.getContext('2d');
 
                 if (context) {
-                    // Get the full stage canvas
                     const stageCanvas = stageRef.current.toCanvas({
                         pixelRatio: pixelRatio,
                         x: printableArea.left,
@@ -156,7 +144,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                         height: printableArea.height
                     });
 
-                    // Draw only the printable area portion to our new canvas
                     context.drawImage(
                         stageCanvas,
                         0, 0,
@@ -192,18 +179,14 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                 rotation: textNode.rotation()
             });
 
-            // Reset scale to prevent double scaling
             textNode.scaleX(1);
             textNode.scaleY(1);
         }
     };
 
-    // Add a handler for stage clicks
     const handleStageClick = (e: Konva.KonvaEventObject<MouseEvent>) => {
-        // Get the target of the click
         const clickedOnEmpty = e.target === e.target.getStage();
 
-        // If clicked on the stage itself (not on any shape)
         if (clickedOnEmpty && onDeselect) {
             onDeselect();
         }
@@ -227,29 +210,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                 onTap={handleStageClick}
             >
                 <Layer>
-                    {/* Render faded versions of images first */}
-                    {/* {!exporting && images.map(image => (
-                        // <ImageLayer
-                        //     key={`faded-${image.id}`}
-                        //     ref={(node) => {
-                        //         // Don't store ref for faded version
-                        //         if (selectedImageId === image.id) {
-                        //             imageRefs.current[image.id] = node;
-                        //         }
-                        //     }}
-                        //     imageUrl={image.url}
-                        //     x={image.x}
-                        //     y={image.y}
-                        //     size={image.size}
-                        //     rotation={image.rotation}
-                        //     isSelected={selectedImageId === image.id}
-                        //     onSelect={() => onImageSelect(image.id)}
-                        //     onChange={(newAttrs) => onImageUpdate(image.id, newAttrs)}
-                        //     opacity={0.3}
-                        // />
-                    ))} */}
-
-                    {/* Clipped version on top */}
                     <Group
                         clipFunc={(ctx) => {
                             ctx.beginPath();
@@ -278,7 +238,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                         ))}
                     </Group>
 
-                    {/* Printable area outline */}
                     <Rect
                         x={printableArea.left}
                         y={printableArea.top}
@@ -289,12 +248,10 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                         listening={false}
                     />
 
-                    {/* Text elements with double-click handler */}
                     {!exporting && texts.map((el) => (
                         <Text
                             key={el.id}
                             ref={(node) => {
-                                // Cast the node to our extended type
                                 textRefs.current[el.id] = node as TextWithTapTime;
                             }}
                             text={el.text}
@@ -311,7 +268,7 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                             onTap={() => onTextSelect && onTextSelect(el.id)}
                             onDblClick={() => onTextDoubleClick && onTextDoubleClick(el.id)}
                             onDblTap={() => onTextDoubleClick && onTextDoubleClick(el.id)}
-                            onTouchEnd={(_) => { // Use underscore to indicate unused parameter
+                            onTouchEnd={(_) => {
                                 const now = Date.now();
                                 const lastTap = textRefs.current[el.id]?.lastTapTime || 0;
                                 const tapLength = now - lastTap;
@@ -322,7 +279,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                                     }
                                 }
 
-                                // Don't use optional chaining on left side of assignment
                                 if (textRefs.current[el.id]) {
                                     textRefs.current[el.id]!.lastTapTime = now;
                                 }
@@ -332,7 +288,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                             opacity={0.3}
                         />
                     ))}
-                    {/* Clipped version on top */}
                     <Group
                         clipFunc={(ctx) => {
                             ctx.beginPath();
@@ -349,7 +304,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                             <Text
                                 key={el.id}
                                 ref={(node) => {
-                                    // Cast the node to our extended type
                                     textRefs.current[el.id] = node as TextWithTapTime;
                                 }}
                                 text={el.text}
@@ -366,7 +320,7 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                                 onTap={() => onTextSelect && onTextSelect(el.id)}
                                 onDblClick={() => onTextDoubleClick && onTextDoubleClick(el.id)}
                                 onDblTap={() => onTextDoubleClick && onTextDoubleClick(el.id)}
-                                onTouchEnd={(_) => { // Use underscore to indicate unused parameter
+                                onTouchEnd={(_) => {
                                     const now = Date.now();
                                     const lastTap = textRefs.current[el.id]?.lastTapTime || 0;
                                     const tapLength = now - lastTap;
@@ -377,7 +331,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                                         }
                                     }
 
-                                    // Don't use optional chaining on left side of assignment
                                     if (textRefs.current[el.id]) {
                                         textRefs.current[el.id]!.lastTapTime = now;
                                     }
@@ -387,7 +340,6 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                             />
                         ))}
                     </Group>
-                    {/* Transformer remains on top */}
                     <Transformer
                         ref={transformerRef}
                         boundBoxFunc={(oldBox, newBox) => {
@@ -402,9 +354,8 @@ const DesignCanvas = forwardRef<DesignCanvasRef, DesignCanvasProps>(({
                     />
                 </Layer>
             </Stage>
-
         </>
     );
 });
 
-export default DesignCanvas; 
+export default DesignCanvas;
