@@ -5,15 +5,14 @@ const nextConfig = {
   compiler: {
     styledComponents: true,
   },
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        canvas: false, // prevent bundling `canvas` on client
-      };
-    }
+  webpack: (config) => {
+    // Add a fallback for the canvas module
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      canvas: false
+    };
     return config;
-  },
+  }
 }
-module.exports = nextConfig; 
 
+module.exports = nextConfig;
